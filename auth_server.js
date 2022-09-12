@@ -7,12 +7,15 @@ const adb = require('./db_auth_tools')
 const app = express()
 app.use(express.json())
 
-// in prod use db or cache
-let refreshTokens = []
 
 // login
 app.post('/login', async (req, res)=>{
-  // authenticate user
+    // handshake between login and auth service
+    if(jwt.verify(req.body.token, process.env.ACCESS_TOKEN_SECRET, (err)=>{
+      if(err) return true // forbidden
+    })) return res.sendStatus(403)
+
+    // authenticate user
     const access_token = generateAccessToken({name: req.body.name})
     const refresh_token = jwt.sign({name: req.body.name}, process.env.REFRESH_TOKEN_SECRET)
     await adb.addRefreshToken(refresh_token)

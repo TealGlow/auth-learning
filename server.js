@@ -1,6 +1,7 @@
 require('dotenv').config()
 const express = require("express")
 const bcrypt = require("bcrypt")
+const axios = require("axios")
 const jwt = require("jsonwebtoken")
 const db = require('./db_tools')
 
@@ -62,6 +63,13 @@ app.post('/login', async (req, res)=>{
     if(await bcrypt.compare(req.body.password, user.password)){
       // user can log
       // we actually wanna post to the auth_server now
+      const result = await axios.post(process.env.AUTH_SERVER_URL+"/login",{
+        name: req.body.name,
+        password: req.body.password,
+        token: jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '10s'})
+      })
+
+      console.log("RESULT", result.data) // add tokens to cookies
       res.send("success") // now go to auth
     }else{
       // wrong password
