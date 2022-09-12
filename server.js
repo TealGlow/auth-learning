@@ -9,24 +9,6 @@ const app = express()
 app.use(express.json())
 
 
-const posts = [
-  {
-    name: 'alyssa',
-    title: "Post 1"
-  },
-  {
-    username: 'Hi :)',
-    title: "Post 2"
-  }
-]
-
-
-// get all posts of a user
-app.get('/posts', authenticateToken, (req, res)=>{
-  res.json(posts.filter(posts=> posts.username === req.user.name))
-})
-
-
 
 // create a new user
 app.post('/users', async (req, res)=>{
