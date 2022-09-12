@@ -1,10 +1,12 @@
 require('dotenv').config()
 const express = require("express")
-const jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt")
+const jwt = require("jsonwebtoken")
+const db = require('./db_tools')
 
 const app = express()
 app.use(express.json())
+
 
 const posts = [
   {
@@ -17,19 +19,13 @@ const posts = [
   }
 ]
 
-const users = [
-
-]
 
 // get all posts of a user
 app.get('/posts', authenticateToken, (req, res)=>{
   res.json(posts.filter(posts=> posts.username === req.user.name))
 })
 
-// get all users for testing
-app.get('/users', (req, res)=>{
-  res.json(users)
-})
+
 
 // create a new user
 app.post('/users', async (req, res)=>{
@@ -38,28 +34,26 @@ app.post('/users', async (req, res)=>{
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(req.body.password, salt)
 
-    console.log(salt)
-    console.log(hashedPassword)
-
     // put the user in to the db here
     const user = {
       name: req.body.name,
       password: hashedPassword
     }
-    users.push(user)
-    res.status(201).send()
+    const result = await db.createNewUser(user)
+    res.status(result).send()
   }catch{
-    console.log("Catch")
     res.status(500).send()
   }
 })
+
 
 
 // login
 app.post('/login', async (req, res)=>{
   // authenticate user
   // find if user exists
-  const user = users.find(user=> user.name === req.body.name)
+  //const user = users.find(user=> user.name === req.body.name)
+  const user = await db.getUser(req.body)
   if(user == null){
     return res.status(400).send('Cannot find user')
   }
@@ -68,6 +62,7 @@ app.post('/login', async (req, res)=>{
     if(await bcrypt.compare(req.body.password, user.password)){
       // user can log
       // we actually wanna post to the auth_server now
+      res.send("success") // now go to auth
     }else{
       // wrong password
       res.send("not allowed")
@@ -76,6 +71,8 @@ app.post('/login', async (req, res)=>{
     res.status(500).send()
   }
 })
+
+
 
 function authenticateToken(req, res, next){
   const authHeader = req.headers['authorization']
@@ -91,5 +88,6 @@ function authenticateToken(req, res, next){
     next()
   })
 }
+
 
 app.listen(3000)
